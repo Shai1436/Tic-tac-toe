@@ -1,22 +1,22 @@
 //player0 is O and player1 is X
 let player = 0;
 let board;
-const box = document.getElementsByClassName('box')[0];
-box.addEventListener('click', (e) => {
-    const targetEle = e.target.firstElementChild;
-    console.log(targetEle);
-    const cell = parseInt(targetEle.getAttribute('data-cell-id'), 10);
-    const move = new Move(cell, player);
-    const indices = move.getIndicesFromCell(cell);
-    if (targetEle.hasAttribute('data-cell-id')) {
-        if (player === 0)
-            targetEle.innerText = 'O';
-        else
-            targetEle.innerText = 'X';
-        board.updateBoard(indices, player);
-        togglePlayer();
-    }
-});
+// const box = document.getElementsByClassName('box')[0];
+// box.addEventListener('click', (e) => {
+//     const targetEle = e.target.firstElementChild;
+//     console.log(targetEle);
+//     const cell = parseInt(targetEle.getAttribute('data-cell-id'), 10);
+//     const move = new Move(cell, player);
+//     const indices = move.getIndicesFromCell(cell);
+//     if (targetEle.hasAttribute('data-cell-id')) {
+//         if (player === 0)
+//             targetEle.innerText = 'O';
+//         else
+//             targetEle.innerText = 'X';
+//         board.updateBoard(indices, player);
+//         togglePlayer();
+//     }
+// });
 
 const togglePlayer = () => {
     if (player === 1)
@@ -124,12 +124,40 @@ class Board {
     }
 }
 
-const windowToCanvas = (canvas, x, y) => {
+const mapIndicesToCanvasCells = (canvas, x, y) => {
     var bbox = canvas.getBoundingClientRect();
-    return {
+    const loc = {
         x: x - bbox.left * (canvas.width / bbox.width),
         y: y - bbox.top * (canvas.height / bbox.height)
     };
+    loc.x = Math.floor(loc.x / 100) * 100;
+    loc.y = Math.floor(loc.y / 100) * 100;
+    return loc;
+}
+
+const drawCross = (canvas, x, y) => {
+    const loc = mapIndicesToCanvasCells(canvas, x, y);
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.translate(loc.x, loc.y);
+    ctx.beginPath();
+    ctx.moveTo(20, 20);
+    ctx.lineTo(80, 80);
+    ctx.moveTo(80, 20);
+    ctx.lineTo(20, 80);
+    ctx.stroke();
+    ctx.restore();
+}
+
+const drawCircle = (canvas, x, y) => {
+    const loc = mapIndicesToCanvasCells(canvas, x, y);
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.translate(loc.x, loc.y);
+    ctx.beginPath();
+    ctx.arc(50, 50, 30, 0, Math.PI * 2, true);
+    ctx.stroke();
+    ctx.restore();
 }
 
 const drawBoard = (id) => {
@@ -141,9 +169,23 @@ const drawBoard = (id) => {
         }
     }
     canvas.onclick = (e) => {
-        var loc = windowToCanvas(canvas, e.clientX, e.clientY);
-        console.log(loc.x / 100, loc.y / 100);
+        if (player === 0)
+            drawCircle(canvas, e.clientX, e.clientY);
+        else
+            drawCross(canvas, e.clientX, e.clientY);
+        const indices = mapIndicesToCanvasCells(canvas, e.clientX, e.clientY);
+        let temp = indices.x;
+        indices.x = Math.floor(indices.y / 100);
+        indices.y = Math.floor(temp / 100);
+        board.updateBoard(indices, player);
+        togglePlayer();
     }
+}
+
+const clearBoard = (id) => {
+    const canvas = document.getElementById(id);
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 const init = () => {
@@ -156,15 +198,9 @@ const init = () => {
 init();
 
 const reset = () => {
-    resetBoard();
+    clearBoard('canvas');
     init();
     const ele = document.getElementById('result-text');
     ele.innerText = ' ';
-}
-
-const resetBoard = () => {
-    const cells = document.getElementsByClassName('cell');
-    for (let i = 0; i < cells.length; i++)
-        cells[i].innerText = '';
 }
 
