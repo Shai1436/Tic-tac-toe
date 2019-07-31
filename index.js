@@ -75,6 +75,10 @@ class Board {
             declareDraw();
     }
 
+    isBoardCellEmpty(indices) {
+        return this.game[indices.x][indices.y] === undefined;
+    }
+
     findGameStatus(indices, player) {
         if (this._checkRow(indices, player) ||
             this._checkColumn(indices, player) ||
@@ -135,8 +139,7 @@ const mapIndicesToCanvasCells = (canvas, x, y) => {
     return loc;
 }
 
-const drawCross = (canvas, x, y) => {
-    const loc = mapIndicesToCanvasCells(canvas, x, y);
+const drawCross = (canvas, loc) => {
     const ctx = canvas.getContext('2d');
     ctx.save();
     ctx.translate(loc.x, loc.y);
@@ -149,8 +152,7 @@ const drawCross = (canvas, x, y) => {
     ctx.restore();
 }
 
-const drawCircle = (canvas, x, y) => {
-    const loc = mapIndicesToCanvasCells(canvas, x, y);
+const drawCircle = (canvas, loc) => {
     const ctx = canvas.getContext('2d');
     ctx.save();
     ctx.translate(loc.x, loc.y);
@@ -169,14 +171,17 @@ const drawBoard = (id) => {
         }
     }
     canvas.onclick = (e) => {
-        if (player === 0)
-            drawCircle(canvas, e.clientX, e.clientY);
-        else
-            drawCross(canvas, e.clientX, e.clientY);
-        const indices = mapIndicesToCanvasCells(canvas, e.clientX, e.clientY);
-        let temp = indices.x;
-        indices.x = Math.floor(indices.y / 100);
+        const loc = mapIndicesToCanvasCells(canvas, e.clientX, e.clientY);
+        const indices = {};
+        let temp = loc.x;
+        indices.x = Math.floor(loc.y / 100);
         indices.y = Math.floor(temp / 100);
+        if (!board.isBoardCellEmpty(indices))
+            return;
+        if (player === 0)
+            drawCircle(canvas, loc);
+        else
+            drawCross(canvas, loc);
         board.updateBoard(indices, player);
         togglePlayer();
     }
