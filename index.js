@@ -1,22 +1,6 @@
 //player0 is O and player1 is X
 let player = 0;
 let board;
-// const box = document.getElementsByClassName('box')[0];
-// box.addEventListener('click', (e) => {
-//     const targetEle = e.target.firstElementChild;
-//     console.log(targetEle);
-//     const cell = parseInt(targetEle.getAttribute('data-cell-id'), 10);
-//     const move = new Move(cell, player);
-//     const indices = move.getIndicesFromCell(cell);
-//     if (targetEle.hasAttribute('data-cell-id')) {
-//         if (player === 0)
-//             targetEle.innerText = 'O';
-//         else
-//             targetEle.innerText = 'X';
-//         board.updateBoard(indices, player);
-//         togglePlayer();
-//     }
-// });
 
 const togglePlayer = () => {
     if (player === 1)
@@ -75,8 +59,10 @@ class Board {
             declareDraw();
     }
 
-    isBoardCellEmpty(indices) {
-        return this.game[indices.x][indices.y] === undefined;
+    canDraw(indices) {
+        const iscellEmpty = this.game[indices.x][indices.y] === undefined;
+        const isGameInProgress = this.gameStatus === null;
+        return iscellEmpty && isGameInProgress;
     }
 
     findGameStatus(indices, player) {
@@ -176,7 +162,7 @@ const drawBoard = (id) => {
         let temp = loc.x;
         indices.x = Math.floor(loc.y / 100);
         indices.y = Math.floor(temp / 100);
-        if (!board.isBoardCellEmpty(indices))
+        if (!board.canDraw(indices))
             return;
         if (player === 0)
             drawCircle(canvas, loc);
