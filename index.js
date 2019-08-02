@@ -45,12 +45,14 @@ class Board {
         this.findGameStatus = this.findGameStatus.bind(this);
         this.game = new Game();
         this.boardCanvas = new BoardCanvas('canvas');
+        this.gameHistory = new Array();
     }
 
     updateBoard(indices) {
         if (!this.canDraw(indices))
             return;
         this.gameBoard[indices.x][indices.y] = this.game.player;
+        this.gameHistory.push(indices);
         this.cellsFilled++;
         this.updateBoardCanvas();
         this.findGameStatus(indices);
@@ -63,6 +65,14 @@ class Board {
 
     updateBoardCanvas() {
         this.boardCanvas.drawBoard(this.gameBoard);
+    }
+
+    undo() {
+        const indices = this.gameHistory.pop();
+        this.gameBoard[indices.x][indices.y] = undefined;
+        this.updateBoardCanvas();
+        this.game.togglePlayer();
+        this.cellsFilled--;
     }
 
     canDraw(indices) {
@@ -122,7 +132,6 @@ class BoardCanvas {
     constructor(id) {
         this.canvas = document.getElementById(id);
         this.ctx = this.canvas.getContext('2d');
-        this.clearBoard();
         this.drawBoard();
         this.addClickListener();
     }
@@ -160,6 +169,7 @@ class BoardCanvas {
     }
 
     drawBoard(board) {
+        this.clearBoard();
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
                 this.ctx.strokeRect(100 * i, 100 * j, 100, 100);
@@ -193,7 +203,9 @@ const init = () => {
 
 init();
 
-
+const undo = () => {
+    board.undo();
+}
 // class Move {
 //     constructor(cell, player) {
 //         this.cell = cell;
