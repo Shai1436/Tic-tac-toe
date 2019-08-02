@@ -1,5 +1,5 @@
 //player0 is O and player1 is X
-
+let board;
 class Game {
     constructor() {
         this.player = 0;
@@ -43,14 +43,26 @@ class Board {
         this.gameStatus = null; // 0: player0 wins, 1: player1 wins, 2: draw, null: undecided
         this.cellsFilled = 0;
         this.findGameStatus = this.findGameStatus.bind(this);
+        this.game = new Game();
+        this.boardCanvas = new BoardCanvas('canvas');
     }
 
-    updateBoard(indices, player) {
-        this.gameBoard[indices.x][indices.y] = player;
+    updateBoard(indices) {
+        if (!this.canDraw(indices))
+            return;
+        this.gameBoard[indices.x][indices.y] = this.game.player;
         this.cellsFilled++;
-        this.findGameStatus(indices, player);
-        return this.gameStatus;
+        this.updateBoardCanvas();
+        this.findGameStatus(indices);
+        if (this.gameStatus === 0 || this.gameStatus === 1)
+            this.game.declareWinner(this.gameStatus + 1);
+        else if (this.gameStatus === 2)
+            this.game.declareDraw();
+        this.game.togglePlayer();
+    }
 
+    updateBoardCanvas() {
+        this.boardCanvas.drawBoard(this.gameBoard);
     }
 
     canDraw(indices) {
@@ -59,59 +71,57 @@ class Board {
         return iscellEmpty && isGameInProgress;
     }
 
-    findGameStatus(indices, player) {
-        if (this._checkRow(indices, player) ||
-            this._checkColumn(indices, player) ||
-            this._checkDiagonal(player) ||
-            this._checkReverseDiagonal(player)) {
-            this.gameStatus = player;
+    findGameStatus(indices) {
+        if (this._checkRow(indices) ||
+            this._checkColumn(indices) ||
+            this._checkDiagonal() ||
+            this._checkReverseDiagonal()) {
+            this.gameStatus = this.game.player;
         }
         else if (this.cellsFilled === 9) {
             this.gameStatus = 2;
         }
     }
 
-    _checkRow(indices, player) {
+    _checkRow(indices) {
         const row = indices.x;
         for (let i = 0; i < 3; i++) {
-            if (this.gameBoard[row][i] !== player)
+            if (this.gameBoard[row][i] !== this.game.player)
                 return false;
         }
         return true;
     }
 
-    _checkColumn(indices, player) {
+    _checkColumn(indices) {
         const col = indices.y;
         for (let i = 0; i < 3; i++) {
-            if (this.gameBoard[i][col] !== player)
+            if (this.gameBoard[i][col] !== this.game.player)
                 return false;
         }
         return true;
     }
 
-    _checkDiagonal(player) {
+    _checkDiagonal() {
         for (let i = 0; i < 3; i++) {
-            if (this.gameBoard[i][i] !== player)
+            if (this.gameBoard[i][i] !== this.game.player)
                 return false;
         }
         return true;
     }
 
-    _checkReverseDiagonal(player) {
+    _checkReverseDiagonal() {
         for (let i = 0; i < 3; i++) {
-            if (this.gameBoard[i][2 - i] !== player)
+            if (this.gameBoard[i][2 - i] !== this.game.player)
                 return false;
         }
         return true;
     }
 }
 
-class CanvasBoard {
+class BoardCanvas {
     constructor(id) {
         this.canvas = document.getElementById(id);
         this.ctx = this.canvas.getContext('2d');
-        this.board = new Board();
-        this.game = new Game();
         this.clearBoard();
         this.drawBoard();
         this.addClickListener();
@@ -128,9 +138,9 @@ class CanvasBoard {
         return loc;
     }
 
-    drawCross(loc) {
+    drawCross(y, x) {
         this.ctx.save();
-        this.ctx.translate(loc.x, loc.y);
+        this.ctx.translate(x, y);
         this.ctx.beginPath();
         this.ctx.moveTo(20, 20);
         this.ctx.lineTo(80, 80);
@@ -140,20 +150,23 @@ class CanvasBoard {
         this.ctx.restore();
     }
 
-    drawCircle(loc) {
-
+    drawCircle(y, x) {
         this.ctx.save();
-        this.ctx.translate(loc.x, loc.y);
+        this.ctx.translate(x, y);
         this.ctx.beginPath();
         this.ctx.arc(50, 50, 30, 0, Math.PI * 2, true);
         this.ctx.stroke();
         this.ctx.restore();
     }
 
-    drawBoard() {
+    drawBoard(board) {
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
                 this.ctx.strokeRect(100 * i, 100 * j, 100, 100);
+                if (board && board[i][j] === 0)
+                    this.drawCircle(100 * i, 100 * j);
+                else if (board && board[i][j] === 1)
+                    this.drawCross(100 * i, 100 * j);
             }
         }
     }
@@ -165,27 +178,17 @@ class CanvasBoard {
             let temp = loc.x;
             indices.x = Math.floor(loc.y / 100);
             indices.y = Math.floor(temp / 100);
-            if (!this.board.canDraw(indices))
-                return;
-            if (this.game.player === 0)
-                this.drawCircle(loc);
-            else
-                this.drawCross(loc);
-            const gameStatus = this.board.updateBoard(indices, this.game.player);
-            if (gameStatus === 0 || gameStatus === 1)
-                this.game.declareWinner(gameStatus + 1);
-            else if (gameStatus === 2)
-                this.game.declareDraw();
-            this.game.togglePlayer();
+            board.updateBoard(indices);
         }
     }
+
     clearBoard() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 
 const init = () => {
-    new CanvasBoard('canvas');
+    board = new Board();
 }
 
 init();
